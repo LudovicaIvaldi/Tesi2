@@ -1,0 +1,29 @@
+
+per ogni care givers fa l'elenco dei pazienti e lo stampa bene
+
+# Step 1: Crea mappa paziente-id → singolo servizio (con split)
+patient_service_map = []
+
+for patient in data["patients"]:
+    base_id = patient["id"]
+    services = patient["required_caregivers"]
+
+    for i, serv in enumerate(services):
+        # ID modificato solo per il secondo servizio in poi
+        pid = base_id if i == 0 else base_id + "'"
+        service = serv["service"]
+        patient_service_map.append((pid, service))
+
+# Step 2: Lista di pazienti per ogni caregiver basata sulle abilities
+caregiver_patient_lists = []
+
+for caregiver in data["caregivers"]:
+    abilities = caregiver["abilities"]
+    eligible = [
+        pid for (pid, service) in patient_service_map if service in abilities
+    ]
+    caregiver_patient_lists.append(eligible)
+
+# Output leggibile
+for caregiver, plist in zip(data["caregivers"], caregiver_patient_lists):
+    print(f"Caregiver {caregiver['id']} può servire: {plist}")
