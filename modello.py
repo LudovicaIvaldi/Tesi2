@@ -8,12 +8,12 @@ from letturaToy import IstanzaToy
 #file toy -> letturaToy("toy")
 
 #---------------------DATASET MANKOWSKA----------------------------
-istanza=Istanza()
-istanza.letturaFile("InstanzCPLEX_HCSRP_10_1")
+# istanza=Istanza()
+# istanza.letturaFile("InstanzCPLEX_HCSRP_10_1")
 
 #---------------------ISTANZA TOY------------------------------------
-# istanza = IstanzaToy()
-# istanza.letturaToy("toy")
+istanza = IstanzaToy()
+istanza.letturaToy("toy")
 
 #--------------------------STAMPA PARAMENTRI ISTANZA -> set su cui cicla il modello HHC-----------------------------
 # print(istanza.pazienti)
