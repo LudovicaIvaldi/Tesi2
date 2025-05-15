@@ -35,7 +35,7 @@ class Istanza():
 
     def letturaFile(self, nomeFile):
         # Carica il file JSON
-        with open(nomeFile+".json", "r") as f:
+        with open(nomeFile, "r") as f:
             data = json.load(f)
 
         # Estrai tutti gli ID dei pazienti
