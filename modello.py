@@ -14,7 +14,7 @@ def ottimizza_file(filename:str) -> Tuple[grb.Model,float]:
 
     #---------------------DATASET MANKOWSKA----------------------------
     istanza=Istanza()
-    istanza.letturaFile("InstanzCPLEX_HCSRP_10_1")
+    istanza.letturaFile(filename)
 
     #---------------------ISTANZA TOY------------------------------------
     # istanza = IstanzaToy()
@@ -240,7 +240,7 @@ def ottimizza_file(filename:str) -> Tuple[grb.Model,float]:
     # model.write("modello.lp")
 
     # Imposta il limite di tempo di 120 secondi (2 minuti)
-    model.setParam('TimeLimit', 120)
+    model.setParam('TimeLimit', 10)
     start_time = time.perf_counter()
     model.optimize()
     processing_time = time.perf_counter()-start_time
@@ -270,10 +270,10 @@ def crea_output(file_originale:str,model: grb.Model,processing_time:float) -> No
     output = OutputModello(model_file=file_originale,
                            optimal=model.status == grb.GRB.OPTIMAL,
                            processing_time= processing_time,
-                           upper_bound = model.ObjVal if model.SolCount > 0 else None
+                           upper_bound = model.ObjVal if model.SolCount > 0 else None,
                            lower_bound = model.ObjBound)
     
-    with open(os.path.join("risultati",output.model_file+"_result.json"),"w",encoding="utf-8",newline="") as f:
+    with open(os.path.join("risultati","result.json"),"a",encoding="utf-8",newline="") as f:
         f.write(output.model_dump_json())
     # # Verifica che sia stata trovata una soluzione ottima
     # if model.status == grb.GRB.OPTIMAL:
@@ -355,6 +355,6 @@ def crea_output(file_originale:str,model: grb.Model,processing_time:float) -> No
     #     print("Non è stata trovata una soluzione ottima.")
 
 if __name__ == "__main__":
-    for file in os.listdir("modelli"):
-        modello_completato,tempo_di_elaborazione_s = ottimizza_file(file)
-        crea_output(file,modello_completato,tempo_di_elaborazione_s)
+    for file in os.listdir("modelli"): #apre la cartella modelli
+        modello_completato,tempo_di_elaborazione_s = ottimizza_file(os.path.join("modelli",file)) #lanci il main
+        crea_output(file,modello_completato,tempo_di_elaborazione_s) #crea output

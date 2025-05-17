@@ -216,3 +216,56 @@ class IstanzaToy:
         self.distanzeDaZero = dict(zip(self.pazientiPrimi, prima_riga))
         #print (self.distanzeDaZero)
 
+        # Crea la lista dei servizi dalla sezione "services"
+        self.servizi = [service["id"] for service in data.get("services", [])]
+
+        # Dizionario paziente -> lista di servizi richiesti
+        self.paziente_servizi = {}
+
+        for paziente in data.get("patients", []):
+            pid = paziente["id"]
+            servizi = [req["service"] for req in paziente.get("required_caregivers", [])]
+            self.paziente_servizi[pid] = servizi
+            self.paziente_servizi["0"] = self.servizi
+
+        self.caregiver_servizi = {
+            caregiver["id"]: caregiver["abilities"]
+            for caregiver in data["caregivers"]
+        }
+
+        # Elenco dei servizi disponibili
+        all_services = [service["id"] for service in data["services"]]
+
+        # Dizionario per i pazienti
+        self.ris = {}
+        for patient in data["patients"]:
+            required = {s: 0 for s in all_services}
+            for req in patient["required_caregivers"]:
+                required[req["service"]] = 1
+            self.ris[patient["id"]] = required
+
+        self.ris["0"] = {s: 1 for s in self.servizi}
+
+        # Dizionario per i caregiver
+        self.avs = {}
+        for caregiver in data["caregivers"]:
+            abilities = {s: 0 for s in all_services}
+            for service in caregiver["abilities"]:
+                abilities[service] = 1
+            self.avs[caregiver["id"]] = abilities
+
+        # delta dei 2 servizi
+        self.dictMin = {}
+        self.dictMax = {}
+
+        for patient in data["patients"]:
+            sync = patient.get("synchronization")
+            if sync:
+                pid = patient["id"]
+                if sync.get("type") == "sequential" and "distance" in sync:
+                    self.dictMin[pid] = sync["distance"][0]
+                    self.dictMax[pid] = sync["distance"][1]
+                elif sync.get("type") == "simultaneous":
+                    self.dictMin[pid] = 0
+                    self.dictMax[pid] = 0
+

@@ -3,6 +3,10 @@ import numpy as np
 
 class Istanza():
     def __init__(self):
+        self.dictMax = None
+        self.dictMin = None
+        self.ris = None
+        self.avs = None
         self.caregiver_servizi = None
         self.paziente_servizi = None
         self.servizi = None
@@ -247,9 +251,42 @@ class Istanza():
             for caregiver in data["caregivers"]
         }
 
+        # Elenco dei servizi disponibili
+        all_services = [service["id"] for service in data["services"]]
+
+        # Dizionario per i pazienti
+        self.ris = {}
+        for patient in data["patients"]:
+            required = {s: 0 for s in all_services}
+            for req in patient["required_caregivers"]:
+                required[req["service"]] = 1
+            self.ris[patient["id"]] = required
+
+        self.ris["0"]={s: 1 for s in self.servizi}
+
+        # Dizionario per i caregiver
+        self.avs = {}
+        for caregiver in data["caregivers"]:
+            abilities = {s: 0 for s in all_services}
+            for service in caregiver["abilities"]:
+                abilities[service] = 1
+            self.avs[caregiver["id"]] = abilities
 
 
+        #delta dei 2 servizi
+        self.dictMin = {}
+        self.dictMax = {}
 
+        for patient in data["patients"]:
+            sync = patient.get("synchronization")
+            if sync:
+                pid = patient["id"]
+                if sync.get("type") == "sequential" and "distance" in sync:
+                    self.dictMin[pid] = sync["distance"][0]
+                    self.dictMax[pid] = sync["distance"][1]
+                elif sync.get("type") == "simultaneous":
+                    self.dictMin[pid] = 0
+                    self.dictMax[pid] = 0
 
         #--------------------------CHIAMO FUNZIONI PER CREARE LE DISTANZE DAL MAGAZZINO--------------------------
         self.costruisci_distanze_da_magazzino()
