@@ -3,6 +3,8 @@ import numpy as np
 
 class Istanza():
     def __init__(self):
+        self.mappa_pazienti_visitabili = None
+        self.patient_caregiver_map = None
         self.dictMax = None
         self.dictMin = None
         self.ris = None
@@ -287,6 +289,49 @@ class Istanza():
                 elif sync.get("type") == "simultaneous":
                     self.dictMin[pid] = 0
                     self.dictMax[pid] = 0
+
+        # Estrazione delle informazioni rilevanti
+        patients = data["patients"]
+        caregivers = data["caregivers"]
+
+        # Costruzione di una mappa caregiver -> abilità (insieme di servizi)
+        caregiver_abilities = {
+            caregiver["id"]: set(caregiver["abilities"])
+            for caregiver in caregivers
+        }
+
+        # Costruzione della mappa paziente -> caregiver compatibili
+        self.patient_caregiver_map = {}
+
+        for patient in patients:
+            patient_id = patient["id"]
+            required_services = {req["service"] for req in patient["required_caregivers"]}
+
+            compatible_caregivers = [
+                caregiver_id
+                for caregiver_id, abilities in caregiver_abilities.items()
+                if not required_services.isdisjoint(abilities)  # almeno un servizio in comune
+            ]
+
+            self.patient_caregiver_map[patient_id] = compatible_caregivers
+            self.patient_caregiver_map["0"]=[k for k in self.caregivers]
+
+        # Estrai caregivers e patients
+        caregivers = data["caregivers"]
+        patients = data["patients"]
+
+        # Costruisci la mappa dei pazienti visitabili per ciascun caregiver
+        self.mappa_pazienti_visitabili = {}
+
+        for caregiver in caregivers:
+            cid = caregiver["id"]
+            abilita = set(caregiver["abilities"])
+            pazienti_visitabili = []
+            for paziente in patients:
+                servizi_richiesti = {rc["service"] for rc in paziente["required_caregivers"]}
+                if abilita & servizi_richiesti:
+                    pazienti_visitabili.append(paziente["id"])
+            self.mappa_pazienti_visitabili[cid] = pazienti_visitabili+["0"]
 
         #--------------------------CHIAMO FUNZIONI PER CREARE LE DISTANZE DAL MAGAZZINO--------------------------
         self.costruisci_distanze_da_magazzino()
