@@ -41,7 +41,7 @@ class IstanzaK():
 
     def letturaKummer(self, nomeFile):
         # Carica il file JSON
-        with open(nomeFile+".json", "r") as f:
+        with open(nomeFile, "r") as f:
             data = json.load(f)
 
         # Estrai tutti gli ID dei pazienti
@@ -247,5 +247,105 @@ class IstanzaK():
         # print("Per ogni paziente i caregivers che lo pososno servire (primo e ultimo sono il magazzino (servibile da tutti o da nessuno?):")
         # print(caregivers_per_patient)
         self.caregiversPossibili=caregivers_per_patient_dict
+
+
+        #________________parte per modello 2_______________________________
+        # ---------------------Paramentri mankowska------------------------------------------
+
+        # Crea la lista dei servizi dalla sezione "services"
+        self.servizi = [service["id"] for service in data.get("services", [])]
+
+        # Dizionario paziente -> lista di servizi richiesti
+        self.paziente_servizi = {}
+
+        for paziente in data.get("patients", []):
+            pid = paziente["id"]
+            servizi = [req["service"] for req in paziente.get("required_caregivers", [])]
+            self.paziente_servizi[pid] = servizi
+            self.paziente_servizi["0"] = self.servizi
+
+        self.caregiver_servizi = {
+            caregiver["id"]: caregiver["abilities"]
+            for caregiver in data["caregivers"]
+        }
+
+        # Elenco dei servizi disponibili
+        all_services = [service["id"] for service in data["services"]]
+
+        # Dizionario per i pazienti
+        self.ris = {}
+        for patient in data["patients"]:
+            required = {s: 0 for s in all_services}
+            for req in patient["required_caregivers"]:
+                required[req["service"]] = 1
+            self.ris[patient["id"]] = required
+
+        self.ris["0"] = {s: 1 for s in self.servizi}
+
+        # Dizionario per i caregiver
+        self.avs = {}
+        for caregiver in data["caregivers"]:
+            abilities = {s: 0 for s in all_services}
+            for service in caregiver["abilities"]:
+                abilities[service] = 1
+            self.avs[caregiver["id"]] = abilities
+
+        # delta dei 2 servizi
+        self.dictMin = {}
+        self.dictMax = {}
+
+        for patient in data["patients"]:
+            sync = patient.get("synchronization")
+            if sync:
+                pid = patient["id"]
+                if sync.get("type") == "sequential" and "distance" in sync:
+                    self.dictMin[pid] = sync["distance"][0]
+                    self.dictMax[pid] = sync["distance"][1]
+                elif sync.get("type") == "simultaneous":
+                    self.dictMin[pid] = 0
+                    self.dictMax[pid] = 0
+
+        # Estrazione delle informazioni rilevanti
+        patients = data["patients"]
+        caregivers = data["caregivers"]
+
+        # Costruzione di una mappa caregiver -> abilità (insieme di servizi)
+        caregiver_abilities = {
+            caregiver["id"]: set(caregiver["abilities"])
+            for caregiver in caregivers
+        }
+
+        # Costruzione della mappa paziente -> caregiver compatibili
+        self.patient_caregiver_map = {}
+
+        for patient in patients:
+            patient_id = patient["id"]
+            required_services = {req["service"] for req in patient["required_caregivers"]}
+
+            compatible_caregivers = [
+                caregiver_id
+                for caregiver_id, abilities in caregiver_abilities.items()
+                if not required_services.isdisjoint(abilities)  # almeno un servizio in comune
+            ]
+
+            self.patient_caregiver_map[patient_id] = compatible_caregivers
+            self.patient_caregiver_map["0"] = [k for k in self.caregivers]
+
+        # Estrai caregivers e patients
+        caregivers = data["caregivers"]
+        patients = data["patients"]
+
+        # Costruisci la mappa dei pazienti visitabili per ciascun caregiver
+        self.mappa_pazienti_visitabili = {}
+
+        for caregiver in caregivers:
+            cid = caregiver["id"]
+            abilita = set(caregiver["abilities"])
+            pazienti_visitabili = []
+            for paziente in patients:
+                servizi_richiesti = {rc["service"] for rc in paziente["required_caregivers"]}
+                if abilita & servizi_richiesti:
+                    pazienti_visitabili.append(paziente["id"])
+            self.mappa_pazienti_visitabili[cid] = pazienti_visitabili + ["0"]
 
 

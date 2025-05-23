@@ -279,7 +279,7 @@ def crea_output(file_originale: str, model: grb.Model) -> None:
                                upper_bound=model.ObjVal if model.SolCount > 0 else None,
                                lower_bound=model.ObjBound)
 
-        with open(os.path.join("risultati", "risultatiKummerM1.json"), "a", encoding="utf-8", newline="") as f:
+        with open(os.path.join("risultati", "risultatiKummerM1_25.json"), "a", encoding="utf-8", newline="") as f:
             f.write(output.model_dump_json())
 
 # Verifica che sia stata trovata una soluzione ottima

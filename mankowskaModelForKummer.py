@@ -1,6 +1,6 @@
 import gurobipy as grb
 
-from letturaMankowska import  Istanza
+from letturaKummer import IstanzaK
 from letturaToy import IstanzaToy
 
 from pydantic import BaseModel
@@ -14,8 +14,8 @@ import os
 
 def ottimizza_file(filename:str) -> grb.Model:
     #---------------------DATASET MANKOWSKA----------------------------
-    istanza=Istanza()
-    istanza.letturaFile(filename)
+    istanza=IstanzaK()
+    istanza.letturaKummer(filename)
 
     #---------------------ISTANZA TOY------------------------------------
     # istanza = IstanzaToy()
@@ -210,8 +210,8 @@ def ottimizza_file(filename:str) -> grb.Model:
                                         for j in istanza.pazienti
                                         for k in istanza.caregivers
                                        for s in istanza.servizi)+
-                        grb.quicksum(istanza.distanzeDaZero[j] * x[j, "0", k,s]
-                                        for j in istanza.pazienti
+                        grb.quicksum(istanza.distanzeDict[i]["0"] * x[i, "0", k,s]
+                                        for i in istanza.pazienti
                                         for k in istanza.caregivers
                                         for s in istanza.servizi)
                         )),
@@ -252,92 +252,12 @@ def crea_output(file_originale: str, model: grb.Model) -> None:
                            upper_bound=model.ObjVal if model.SolCount > 0 else None,
                            lower_bound=model.ObjBound)
 
-    with open(os.path.join("risultati", "resultMankowskaModel_50.json"), "a", encoding="utf-8", newline="") as f:
+    with open(os.path.join("risultati", "resultKummerM2_25.json"), "a", encoding="utf-8", newline="") as f:
         f.write(output.model_dump_json())
 
 
-# Verifica che sia stata trovata una soluzione ottima
-#     if model.status == grb.GRB.OPTIMAL:
-#         print("\n--- Soluzione Ottima ---")
-
-
-        # # Stampa variabili x[i,j,k] == 1
-        # print("\n-> Variabili x[i,j,k] attive:")
-        # for (i, j, k,s), var in x.items():
-        #         if var.X > 0.5:  # è binaria quindi basta > 0.5
-        #              print(f"x({i},{j},{k},{s}) = {int(var.X)}")
-
-
-        # # Stampa percorsi ordinati per ogni caregiver
-        # print("\n-> Percorsi per caregiver:")
-        # for k in istanza.caregivers:
-        #     percorso = []
-        #     corrente = "0"  # partenza dal magazzino
-        #     visitati = set()
-        #
-        #     while True:
-        #         trovato_prossimo = False
-        #         for j in istanza.pazientiVisitabili[istanza.caregivers.index(k)] + ["0"]:
-        #             if (corrente, j, k) in x and x[corrente, j, k].X > 0.5:
-        #                 percorso.append((corrente))
-        #                 if j == "0":  # ritorno al magazzino
-        #                     trovato_prossimo = False
-        #                     break
-        #                 corrente = j
-        #                 if corrente in visitati:
-        #                     break  # evitiamo cicli infiniti
-        #                 visitati.add(corrente)
-        #                 trovato_prossimo = True
-        #                 break
-        #         if not trovato_prossimo:
-        #             break
-        #
-        #     if percorso:
-        #         percorso_str=""
-        #         for i in percorso:
-        #             percorso_str += f'{i} -> '
-        #         percorso_str += "0"
-        #         print(f"Caregiver {k}: {percorso_str}")
-
-        # # Stampa variabili t[i,k,s]
-        # print("\n-> Variabili t[i,k,s] (tempi di inizio servizio):")
-        # for (i, k, s), var in t.items():
-        #     if var.X > 1e-6:  # evita di stampare zeri numerici
-        #         print(f"t({i},{k},{s}) = {var.X:.2f}")
-        #
-        # # Stampa variabili z[i,s]
-        # print("\n-> Variabili z[i,s] (ritardi):")
-        # for (i, s), var in z.items():
-        #     if var.X > 1e-6:
-        #         print(f"z({i},{s}) = {var.X:.2f}")
-        #
-        # # Stampa valore di Tmax
-        # print(f"\n-> Tmax (massimo ritardo): {Tmax.X:.2f}")
-
-
-    #     # Calcolo e stampa della distanza totale percorsa
-    #     distanza_totale = 0
-    #     for (i, j, k), var in x.items():
-    #         if var.X > 0.5:
-    #             if i == "0":
-    #                 distanza = istanza.distanzeDaZero[j]
-    #             elif j == "0":
-    #                 distanza = istanza.distanzeDaZero[i]
-    #             else:
-    #                 distanza = istanza.distanzeDict[i][j]
-    #             distanza_totale += distanza
-    #     print(f"\nDistanza totale percorsa: {distanza_totale:.3f}")
-    #     # Stampa massimo ritardo D
-    #     print(f"Massimo ritardo Dmax = {D.X:.3f}")
-    #     #Stampa somma dei ritardi
-    #     print (f'Somma dei singoli ritardi: {somma_ritardi:.3f}')
-    #     # Stampa valore della funzione obiettivo
-    #     print(f"\nValore funzione obiettivo: {model.ObjVal:.3f}")
-    #
-    # else:
-    #     print("Non è stata trovata una soluzione ottima.")
 
 if __name__ == "__main__":
-    for file in os.listdir("modelli"):  # apre la cartella modelli
-        modello_completato = ottimizza_file(os.path.join("modelli", file))  # lanci il main
+    for file in os.listdir("modelliKummer"):  # apre la cartella modelli
+        modello_completato = ottimizza_file(os.path.join("modelliKummer", file))  # lanci il main
         crea_output(file, modello_completato)  # crea output
