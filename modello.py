@@ -240,7 +240,7 @@ def ottimizza_file(filename:str) -> Tuple[grb.Model,float]:
     # model.write("modello.lp")
 
     # Imposta il limite di tempo di 120 secondi (2 minuti)
-    model.setParam('TimeLimit', 10)
+    model.setParam('TimeLimit', 180)
     start_time = time.perf_counter()
     model.optimize()
     processing_time = time.perf_counter()-start_time
